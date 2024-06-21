@@ -65,6 +65,7 @@
                         <li role="presentation" class="outpage"><a href="#">{{ request.session.username }}
                             </a></li>
                         <li role="presentation" class="active outpage"><a href="{% url 'record' %}">答题记录 / 错题本</a></li>
+                        <li role="presentation" class="active outpage"><a href="{% url 'ShowRank' %}">排行榜</a></li>
                         <li role="presentation" class="outpage"><a id="logout outpage"
                                 href="{% url 'logout' %}">退出登录</a></li>
                         {% else %}
