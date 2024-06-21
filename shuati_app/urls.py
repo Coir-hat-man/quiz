@@ -1,16 +1,16 @@
 # encoding: utf-8
 '''
- @author: 我不是大佬 
- @contact: 2869210303@qq.com
- @wx; safeseaa
- @qq; 2869210303
+ @author: Coir-hat-man
+ @contact: 1926415776@qq.com
+ @wx; l3i700
+ @qq; 1926415776
  @file: urls.py
- @time: 2023/7/1 15:48
+ @time: 2024/6/20/23:02
   '''
 
 from django.urls import re_path as url
 from django.urls import re_path, path, include
-from .views import index, ajax,adminsite
+from .views import index, ajax,adminsite,rank
 
 urlpatterns = [
     url(r'^$', index.shuati_app_index, name="index"),
@@ -62,5 +62,7 @@ urlpatterns = [
     # 加入收藏
     path("addintoErrorBook/",ajax.addintoErrorBook,name="addintoErrorBook"),
     path("removefromErrorBook/",ajax.removefromErrorBook,name="removefromErrorBook"),
+    #获取排行榜
+    path("ShowRank/",rank.ShowRank,name="ShowRank")
 
 ]

@@ -17,6 +17,12 @@ class BaseModel(models.Model):
     class Meta:
         abstract = True
 
+class Visitor(models.Model):
+    def rank(self):
+        pass
+    class Meta:
+        abstract=True
+
 
 # 题目分类
 class Tag(BaseModel):
@@ -194,3 +200,23 @@ class AdminUser(models.Model):
 
     def __str__(self):
         return self.username
+
+class AccuracyVisitor(Visitor):
+
+    users = User.objects.all()
+    user_data = []
+    def rank(self):
+        for user in self.users:
+            self.user_data.append({
+                'username': user.username,
+                'totalCorrectPercentage': user.totalCorrectPercentage()
+            })
+
+        # 如果需要按照 totalCorrectPercentage 排序
+        self.user_data.sort(key=lambda x: x['totalCorrectPercentage'], reverse=True)
+
+        return self.user_data
+
+
+
+
