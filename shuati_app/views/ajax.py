@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+from abc import ABC, abstractmethod
 
 # 发送邮箱颜验证码
 def getemailcode(request):
@@ -271,29 +272,50 @@ def removefromErrorBook(request):
     record.save()
     return setSuccess("移出错题本成功！")
 
+
+# 定义抽象观察者类
+class Observer(ABC):
+
+    @abstractmethod
+    def update(self, instance):
+        pass
+
+
+# 具体观察者类，实现了 Observer 接口
+class UserActivityObserver(Observer):
+
+    def update(self, instance, created):
+        if created:
+            today = instance.create_time.date()
+            activity, created = UserActivity.objects.get_or_create(
+                user=instance.user,
+                date=today
+            )
+            activity.question_num = AnswerRecord.objects.filter(
+                user=instance.user,
+                create_time__date=today
+            ).count()
+
+            correct_count = AnswerRecord.objects.filter(
+                user=instance.user,
+                create_time__date=today,
+                is_correct=True
+            ).count()
+
+            activity.correct_percentage = (orrect_count / activity.question_num) * 100 if activity.question_num > 0 else 0.0
+
+            activity.save()
+
+
+# 创建具体观察者对象
+user_activity_observer = UserActivityObserver()
+
+
+# 注册观察者到信号
 @receiver(post_save, sender=AnswerRecord)
-def update_user_activity(sender, instance, created, **kwargs):
-    if created:
-        # 获取用户当天的活动记录
-        today = instance.create_time.date()
-        activity, created = UserActivity.objects.get_or_create(
-            user=instance.user,
-            date=today
-        )
+def handle_answer_record_save(sender, instance, created, **kwargs):
+    user_activity_observer.update(instance, created)
 
-        # 更新做题总数和正确率
-        activity.question_num = AnswerRecord.objects.filter(
-            user=instance.user,
-            create_time__date=today
-        ).count()
 
-        correct_count = AnswerRecord.objects.filter(
-            user=instance.user,
-            create_time__date=today,
-            is_correct=True
-        ).count()
 
-        activity.correct_percentage = (correct_count / activity.question_num) * 100 if activity.question_num > 0 else 0.0
-
-        activity.save()
 
