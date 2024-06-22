@@ -4,7 +4,12 @@ from django.db.models import Subquery
 from django.http import JsonResponse
 from .adminsite import setError, setSuccess
 from ..config.config import main, get_first_15_chars
-from ..models import Tag, User, Question, AnswerRecord
+from ..models import Tag, User, Question, AnswerRecord, UserActivity
+from django.utils import timezone
+from datetime import datetime, timedelta
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 # 发送邮箱颜验证码
@@ -265,3 +270,30 @@ def removefromErrorBook(request):
     record.isInErrorBook = False
     record.save()
     return setSuccess("移出错题本成功！")
+
+@receiver(post_save, sender=AnswerRecord)
+def update_user_activity(sender, instance, created, **kwargs):
+    if created:
+        # 获取用户当天的活动记录
+        today = instance.create_time.date()
+        activity, created = UserActivity.objects.get_or_create(
+            user=instance.user,
+            date=today
+        )
+
+        # 更新做题总数和正确率
+        activity.question_num = AnswerRecord.objects.filter(
+            user=instance.user,
+            create_time__date=today
+        ).count()
+
+        correct_count = AnswerRecord.objects.filter(
+            user=instance.user,
+            create_time__date=today,
+            is_correct=True
+        ).count()
+
+        activity.correct_percentage = (correct_count / activity.question_num) * 100 if activity.question_num > 0 else 0.0
+
+        activity.save()
+

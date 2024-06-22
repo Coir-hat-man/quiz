@@ -218,5 +218,34 @@ class AccuracyVisitor(Visitor):
         return self.user_data
 
 
+# 用户做题情况轨迹
+class UserActivity(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name="用户",
+        related_name="activities"
+    )
+    date = models.DateField(
+        verbose_name="日期"
+    )
+    question_num = models.IntegerField(
+        verbose_name="做题总数",
+        default=0
+    )
+    correct_percentage = models.FloatField(
+        verbose_name="正确率",
+        default=0.0
+    )
+
+    def __str__(self):
+        return f"{self.user.username} - {self.date}"
+
+    class Meta:
+        verbose_name = "用户做题情况轨迹"
+        verbose_name_plural = "用户做题情况轨迹"
+        db_table = 'shuatiapp_user_activity'
+
+
 
 

@@ -14,7 +14,9 @@ from django.views.generic import View
 
 from ..config.config import get_verified_image
 from ..config.forms import LoginRegisterForm
-from ..models import User, Tag, AnswerRecord, Question
+from ..models import User, Tag, AnswerRecord, Question, UserActivity
+from django.utils import timezone
+from django.shortcuts import render
 
 
 def shuati_app_index(request):
@@ -114,7 +116,25 @@ def record(request):
     ).first()
     if not user:
         return returnErrorPage(request, msg="用户身份校验失败，无法访问")
+        # 获取最近 7 天的用户做题情况
+    end_date = timezone.now().date()
+    start_date = end_date - timezone.timedelta(days=6)
+
+    user_activities = UserActivity.objects.filter(
+        user=user,
+        date__range=[start_date, end_date]
+    ).order_by('date')
+
+    # 准备数据
+    days = [activity.date.day for activity in user_activities]
+    months = [activity.date.month for activity in user_activities]
+    question_nums = [activity.question_num for activity in user_activities]
+    correct_percentages = [activity.correct_percentage for activity in user_activities]
     return render(request, "user/answerrecord.html", {
+        "days": days,
+        "months":months,
+        "question_nums": question_nums,
+        "correct_percentages": correct_percentages,
         "user_username": request.session.get("username"),
         "user_email": request.session.get("email"),
         "totalQuestionNum": user.totalQuestionNum(),

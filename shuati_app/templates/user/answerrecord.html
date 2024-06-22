@@ -92,6 +92,11 @@
         <h4>我的刷题正确率:
             <span class="">{{totalCorrectPercentage}}</span>
         </h4>
+        <!-- 在这里添加两个canvas用于绘制折线图 -->
+        <div class="chart-container">
+            <canvas id="questionNumChart"></canvas>
+            <canvas id="correctPercentageChart"></canvas>
+        </div>
     </div>
     </template>
 </div>
@@ -108,6 +113,7 @@
 
 {% endblock %}
 {% block js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     // 答题记录
     var recordApp = new Vue({
@@ -197,11 +203,91 @@
 
 
     $(document).ready(function () {
-        recordApp.username = $("#recordApp").data("user_username")
-        recordApp.useremail = $("#recordApp").data("user_email")
+        recordApp.username = $("#recordApp").data("user_username");
+        recordApp.useremail = $("#recordApp").data("user_email");
         // 获取信息
-        recordApp.getMyRecoed(1)
+        recordApp.getMyRecoed(1);
+
+        // 获取视图传递的数据
+        const days = JSON.parse('{{ days|escapejs|safe }}');
+        const months = JSON.parse('{{ months|escapejs|safe }}');
+        const questionNums = JSON.parse('{{ question_nums|escapejs }}');
+        const correctPercentages = JSON.parse('{{ correct_percentages|escapejs }}');
+        const labels = days.map((day, index) => `${months[index]}.${day}`);
+
+        // 绘制每日答题总数折线图
+        const ctx1 = document.getElementById('questionNumChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '每日答题总数',
+                    data: questionNums,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    fill: true,
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: '日期'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: '答题总数'
+                        }
+                    }
+                }
+            }
+        });
+
+        // 绘制每日答题正确率折线图
+        const ctx2 = document.getElementById('correctPercentageChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '每日答题正确率 (%)',
+                    data: correctPercentages,
+                    borderColor: 'rgba(153, 102, 255, 1)',
+                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                    fill: true,
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: '日期'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: '正确率 (%)'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
     });
+
+
 
 </script>
 {% endblock %}
