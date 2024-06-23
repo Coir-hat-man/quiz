@@ -1,8 +1,58 @@
 from ..models import User, AnswerRecord, Question
 from ..views.adminsite import setError, setSuccess
+import random
 
 
 class RecordService:
+
+    @staticmethod
+    def fetch_random_question(request):
+        if not request.session.get("username"):
+            return setError("没有登录，无权访问")
+
+        # 验证用户邮箱是否合格
+        c1 = (request.session.get("username", "1") != request.GET.get("username", "2"))
+        c2 = (request.session.get("email", "1") != request.GET.get("email", "2"))
+        if c1 or c2:
+            return setError("用户身份校验未通过，获取题目信息失败")
+
+        # 判断是否携带标签
+        if not Question.objects.filter(
+                tag__nid=request.GET.get("tag_nid", ""),
+                tag__tag=request.GET.get("tag_tag", ""),
+                is_delete=False
+        ).exists():
+            return setError("此标签暂时没有题目，等待管理员添加中...")
+
+        # 获取用户的邮箱
+        email = request.session.get("email")
+        # 获取用户对象
+        user = User.objects.get(email=email)
+        # 使用子查询获取用户已经回答过的题目的id列表
+        answered_questions = AnswerRecord.objects.filter(
+            user=user,
+            question__tag__tag=request.GET.get("tag_tag"),
+            question__tag__nid=request.GET.get("tag_nid")
+        ).values_list('question__question_id', flat=True)
+        q = Question.objects.exclude(
+            question_id__in=answered_questions). \
+            filter(
+            is_delete=False,
+            tag__tag=request.GET.get("tag_tag"),
+            tag__nid=request.GET.get("tag_nid")
+        )
+        if not q:
+            return setError("此标签的题目已经全部被您刷完啦！去其他的分类看看吧")
+        q = q[random.randint(0, len(q) - 1)]
+        return setSuccess(
+            msg="获取题目成功",
+            data={
+                "question_id": q.question_id,
+                "question_content": q.question_content,
+                "options": q.options,
+                "create_time": q.create_time
+            }
+        )
 
     @staticmethod
     def record_answer(request):
