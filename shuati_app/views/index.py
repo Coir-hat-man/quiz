@@ -17,8 +17,7 @@ from ..config.forms import LoginRegisterForm
 from ..models import User, Tag, AnswerRecord, Question, UserActivity
 from django.utils import timezone
 from django.shortcuts import render
-
-
+from ..services.index_service import Index_User_service, Index_Tag_service, Index_AnswerRecord_service,Index_Question_service,Index_UserActivity_service
 def shuati_app_index(request):
     return render(request, "index.html")
 
@@ -50,14 +49,7 @@ class LoginView(View):
                     "email": request.session.get("email")
                 }
             )
-        curuser = User.objects.filter(
-            email=request.session.get("email")
-        ).first()
-        if not curuser:
-            curuser=User.objects.create(
-                username=request.session.get("email"),
-                email=request.session.get("email")
-            )
+        curuser = Index_User_service.get_or_create_user_from_session(request.session)
         request.session["is_logined"] = True
         request.session["email"] = curuser.email
         request.session["username"] = curuser.username
@@ -92,10 +84,7 @@ def tagdetail(request):
     if not request.session.get("username"):
         return returnErrorPage(request)
     tagid = request.GET.get("tagid")
-    tag = Tag.objects.filter(
-        nid=tagid,
-        is_delete=False
-    ).values('tag', 'nid').first()
+    tag = Index_Tag_service.get_tag_by_id(tagid)
     if not tag:
         return returnErrorPage(request, "没有查询此标签，无法访问")
     return render(request, "tagdetail.html", {
@@ -109,21 +98,14 @@ def tagdetail(request):
 def record(request):
     if not request.session.get("username"):
         return returnErrorPage(request)
-    user = User.objects.filter(
-        is_delete=False,
-        email=request.session.get("email", ""),
-        username=request.session.get("username", "1")
-    ).first()
+    user = Index_User_service.get_user_from_session(request.session)
     if not user:
         return returnErrorPage(request, msg="用户身份校验失败，无法访问")
         # 获取最近 7 天的用户做题情况
     end_date = timezone.now().date()
     start_date = end_date - timezone.timedelta(days=6)
 
-    user_activities = UserActivity.objects.filter(
-        user=user,
-        date__range=[start_date, end_date]
-    ).order_by('date')
+    user_activities = Index_UserActivity_service.get_user_activities(user, start_date, end_date)
 
     # 准备数据
     days = [activity.date.day for activity in user_activities]
@@ -144,3 +126,4 @@ def record(request):
 
 def testpage(request):
     return render(request, "testpage.html")
+
