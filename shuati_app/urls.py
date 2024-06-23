@@ -10,7 +10,7 @@
 
 from django.urls import re_path as url
 from django.urls import re_path, path, include
-from .views import index, ajax,adminsite,rank
+from .views import ajax, index, adminsite,rank
 
 urlpatterns = [
     url(r'^$', index.shuati_app_index, name="index"),
