@@ -1,4 +1,3 @@
-# encoding: utf-8
 from io import BytesIO
 from django.shortcuts import render, HttpResponse, redirect
 from django.views.generic import View
@@ -11,46 +10,29 @@ from django.shortcuts import render
 
 class Index_User_service:
     @staticmethod
-    def select_user(username,email):
-        objects=User.objects.filter(
-            username=username,
-            email=email
+    def get_or_create_user_from_session(session):
+        curuser = User.objects.filter(email=session.get("email")).first()
+        if not curuser:
+            curuser = User.objects.create(
+            username=session.get("email"),
+            email=session.get("email")
         )
-        return objects
+        return curuser
+    @staticmethod
+    def get_user_from_session(request_session):
+        user = User.objects.filter(
+        is_delete=False,
+        email=request_session.get("email", ""),
+        username=request_session.get("username", "1")
+    ).first()
+        return user
 
 class Index_Tag_service:
     @staticmethod
-    def select_tag(tagname=None,nid=None):
-        if nid is None and tagname is None:
-            objects = Tag.objects.filter(
-                is_delete=False
-            )
-        elif nid is None:
-            objects = Tag.objects.filter(
-                tag=tagname,
-                is_delete=False
-            )
-        elif tagname is None:
-            objects = Tag.objects.filter(
-                nid=nid,
-                is_delete=False
-            )
-        else:
-            objects=Tag.objects.filter(
-                tag=tagname,
-                nid=nid,
-                is_delete=False
-            )
-        return objects
+    def get_tag_by_id(tagid):
+        tag_info = Tag.objects.filter(nid=tagid, is_delete=False).values('tag', 'nid').first()
+        return tag_info
 
-
-    @staticmethod
-    def select_relative_tag(tagname):
-        objects = Tag.objects.filter(
-            tag__contains=tagname.strip(),
-            is_delete=False
-        )
-        return objects
 
 class Index_AnswerRecord_service:
     
@@ -136,45 +118,9 @@ class Index_Question_service:
 
 class Index_UserActivity_service:
     @staticmethod
-    def create_user_activity(user, date, question_num, correct_percentage):
-        return UserActivity.objects.create(
-            user=user,
-            date=date,
-            question_num=question_num,
-            correct_percentage=correct_percentage
-        )
-
-    @staticmethod
-    def update_user_activity(user_activity_id, question_num=None, correct_percentage=None):
-        try:
-            user_activity = UserActivity.objects.get(id=user_activity_id)
-            if question_num is not None:
-                user_activity.question_num = question_num
-            if correct_percentage is not None:
-                user_activity.correct_percentage = correct_percentage
-            user_activity.save()
-            return user_activity
-        except UserActivity.DoesNotExist:
-            return None
-
-    @staticmethod
-    def get_user_activity(user_activity_id):
-        try:
-            return UserActivity.objects.get(id=user_activity_id)
-        except UserActivity.DoesNotExist:
-            return None
-
-    @staticmethod
-    def delete_user_activity(user_activity_id):
-        try:
-            UserActivity.objects.get(id=user_activity_id).delete()
-        except UserActivity.DoesNotExist:
-            pass
-
-    @staticmethod
-    def get_activities_by_user(user):
-        return UserActivity.objects.filter(user=user)
-
-    @staticmethod
-    def get_activities_by_date(date):
-        return UserActivity.objects.filter(date=date)
+    def get_user_activities(user, start_date, end_date):
+        user_activities = UserActivity.objects.filter(
+        user=user,
+        date__range=[start_date, end_date]
+    ).order_by('date')
+        return user_activities
