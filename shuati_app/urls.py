@@ -10,18 +10,18 @@
 
 from django.urls import re_path as url
 from django.urls import re_path, path, include
-from .views import ajax_old, index, adminsite,rank
+from .views import ajax, index, adminsite,rank
 
 urlpatterns = [
     url(r'^$', index.shuati_app_index, name="index"),
     path("login/", index.LoginView.as_view(), name="login"),
     path('get_captcha/', index.get_captcha, name="get_captcha"),
     # 获取邮箱验证码
-    path('getemailcode/', ajax_old.getemailcode, name="getemailcode"),
+    path('getemailcode/', ajax.getemailcode, name="getemailcode"),
     # 退出登录
     path("logout/", index.logout, name="logout"),
     # 获取所有的标签
-    path("getAllTags/",ajax_old.getAllTags,name="getAllTags"),
+    path("getAllTags/",ajax.getAllTags,name="getAllTags"),
     # 管理员登录
     path("adminlogin/",adminsite.adminlogin,name="adminlogin"),
     # 管理员后天
@@ -48,20 +48,20 @@ urlpatterns = [
     # 标签详情页面
     path("tagdetail/",index.tagdetail,name="tagdetail"),
     # 根据用户获取没有写过的题目
-    path("getRandomQuestion/",ajax_old.getRandomQuestion,name="getRandomQuestion"),
+    path("getRandomQuestion/",ajax.getRandomQuestion,name="getRandomQuestion"),
     # 提交答案，返回结果
-    path("submitAnswer/",ajax_old.submitAnswer,name="submitAnswer"),
+    path("submitAnswer/",ajax.submitAnswer,name="submitAnswer"),
     # 答题记录
     path("record/",index.record,name="record"),
     # 获取记录信息
-    path("getRecord/",ajax_old.getRecord,name="getRecord"),
+    path("getRecord/",ajax.getRecord,name="getRecord"),
     # 获取数据
-    path("getDetailData/",ajax_old.getDetailData,name="getDetailData"),
+    path("getDetailData/",ajax.getDetailData,name="getDetailData"),
     # 测试页面
     path("testpage/",index.testpage,name="testpage"),
     # 加入收藏
-    path("addintoErrorBook/",ajax_old.addintoErrorBook,name="addintoErrorBook"),
-    path("removefromErrorBook/",ajax_old.removefromErrorBook,name="removefromErrorBook"),
+    path("addintoErrorBook/",ajax.addintoErrorBook,name="addintoErrorBook"),
+    path("removefromErrorBook/",ajax.removefromErrorBook,name="removefromErrorBook"),
     #获取排行榜
     path("ShowRank/",rank.ShowRank,name="ShowRank")
 
