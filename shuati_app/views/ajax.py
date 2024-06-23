@@ -7,13 +7,15 @@ from ..config.config import main, get_first_15_chars
 from ..models import Tag, User, Question, AnswerRecord, UserActivity
 from django.utils import timezone
 from datetime import datetime, timedelta
+from ..services.user_service import UserService
+from ..services.record_service import RecordService
+from ..services.tag_service import TagService
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from abc import ABC, abstractmethod
 
-# 发送邮箱颜验证码
 def getemailcode(request):
     email = request.GET.get("email")
     print("输入的邮箱是；", email)
@@ -30,30 +32,8 @@ def getemailcode(request):
 
 
 def getAllTags(request):
-    tags = Tag.objects.filter(
-        is_delete=0
-    )
-    if tags:
-        data_dict = {
-            "code": 200,
-            "status": True,
-            "msg": "获取题目分类成功",
-            "data": []
-        }
-        for tag in tags:
-            data_dict["data"].append(
-                {
-                    "tag": tag.tag,
-                    "create_time": tag.create_time
-                }
-            )
-        return JsonResponse(data_dict)
-    return JsonResponse({
-        "code": 500,
-        "status": False,
-        "data": [],
-        "msg": "没有查询到数据"
-    })
+    result = TagService.fetch_all_tags()
+    return JsonResponse(result)
 
 
 def getRandomQuestion(request):
@@ -104,6 +84,7 @@ def getRandomQuestion(request):
     )
 
 
+
 # 提交答案
 def submitAnswer(request):
     # 判断用户是否登录，否则无权访问此接口
@@ -144,134 +125,25 @@ def submitAnswer(request):
     )
 
 
-# 获答题记录
-def getRecord(request):
-    # 判断用户是否登录，否则无权访问此接口
-    if (not request.session.get("username")) or (not request.session.get("email")):
-        return setError("没有登录，无权访问")
-    # 验证用户邮箱是否合格
-    if (request.session.get("username", "1") != request.GET.get("username", "2")) or (
-            request.session.get("email", "1") != request.GET.get("email", "2")):
-        return setError("用户身份校验未通过，获取题目信息失败")
-    user = User.objects.filter(
-        is_delete=False,
-        email=request.session.get("email"),
-        username=request.session.get("username")
-    ).first()
-    if not user:
-        return setError("用户信息核对失败，无法获取数据")
-    try:
-        page = int(request.GET.get("page"))
-        if page <= 0:
-            page = 1
-    except:
-        page = 1
-    print((request.GET.get("isfinderrorbook", "0") == 1))
-    if (request.GET.get("isfinderrorbook", "0") == "1"):
-        recoeds = AnswerRecord.objects.filter(
-            is_delete=False, user=user,
-            question__question_content__contains=request.GET.get("keywords", ""),
-            isInErrorBook=True
-        ).order_by("-create_time")
-    else:
-        recoeds = AnswerRecord.objects.filter(
-            is_delete=False, user=user,
-            question__question_content__contains=request.GET.get("keywords", ""),
-        ).order_by("-create_time")
-    if not recoeds:
-        return setError("没有查询到数据")
-    recordData = []
-    length = len(recoeds)
-    recoeds = recoeds[(page - 1) * 10: page * 10]
-    for r in recoeds:
-        recordData.append({
-            "is_correct": r.is_correct,
-            "create_time": r.create_time,
-            "answer": r.answer,
-            "question_id": r.question.question_id,
-            "question_content": r.question.question_content,
-            "correct_answer": r.question.correct_answer,
-            "tag": r.question.tag.tag,
-            "options": r.question.options,
-            "answer_detail": r.question.answer_detail,
-            "answer_num": r.question.answer_num(),
-            "correctPercent": r.question.correctPercent(),
-            "isInErrorBook": r.isInErrorBook,
-        })
-    return setSuccess(
-        msg="获取答题记录信息成功!",
-        data=recordData,
-        len=length
 
-    )
+def getRecord(request):
+    result = RecordService.fetch_user_record(request)
+    return JsonResponse(result)
 
 
 def getDetailData(request):
-    if (not request.session.get("username")) or (not request.session.get("email")):
-        return setError("没有登录，无权访问")
-    user = User.objects.filter(
-        is_delete=False,
-        email=request.session.get("email"),
-        username=request.session.get("username")
-    ).first()
-    if not user:
-        return setError("用户身份校验失败，无法获取数据")
-    return setSuccess(
-        msg="获取数据成功！",
-        data={
-            "username": user.username,
-            "email": user.email,
-            "detail": user.detail,
-            "totalQuestionNum": user.totalQuestionNum(),
-            "totalCorrectNum": user.totalCorrectNum(),
-            "totalCorrectPercentage": user.totalCorrectPercentage,
-
-        })
+    result = UserService.get_user_detail(request)
+    return JsonResponse(result)
 
 
 def addintoErrorBook(request):
-    if (not request.session.get("username")) or (not request.session.get("email")):
-        return setError("没有登录，无权访问")
-    user = User.objects.filter(
-        is_delete=False,
-        email=request.session.get("email"),
-        username=request.session.get("username")
-    ).first()
-    if not user:
-        return setError("用户身份校验失败，无法获取数据")
-    record = AnswerRecord.objects.filter(
-        is_delete=False,
-        user=user,
-        question__question_id=request.GET.get("question_id"),
-    ).first()
-    if not record:
-        return setError("警告，异常操作")
-    record.isInErrorBook = True
-    record.save()
-    return setSuccess(msg="加入错题本成功！")
+    result = RecordService.add_to_error_book(request)
+    return JsonResponse(result)
 
 
 def removefromErrorBook(request):
-    if (not request.session.get("username")) or (not request.session.get("email")):
-        return setError("没有登录，无权访问")
-    user = User.objects.filter(
-        is_delete=False,
-        email=request.session.get("email"),
-        username=request.session.get("username")
-    ).first()
-    if not user:
-        return setError("用户身份校验失败，无法获取数据")
-    record = AnswerRecord.objects.filter(
-        is_delete=False,
-        user=user,
-        question__question_id=request.GET.get("question_id"),
-    ).first()
-    if not record:
-        return setError("警告，异常操作")
-    record.isInErrorBook = False
-    record.save()
-    return setSuccess("移出错题本成功！")
-
+    result = RecordService.remove_from_error_book(request)
+    return JsonResponse(result)
 
 # 定义抽象观察者类
 class Observer(ABC):
@@ -302,7 +174,7 @@ class UserActivityObserver(Observer):
                 is_correct=True
             ).count()
 
-            activity.correct_percentage = (orrect_count / activity.question_num) * 100 if activity.question_num > 0 else 0.0
+            activity.correct_percentage = (correct_count / activity.question_num) * 100 if activity.question_num > 0 else 0.0
 
             activity.save()
 
