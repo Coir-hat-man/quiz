@@ -1,37 +1,43 @@
 import os
 from pathlib import Path
+import environ
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-odt30#-f4kkigl%li$vr&+(u33!0_zczhtu&=p$&am-&dh)1=)'
+# 初始化环境变量
+env = environ.Env(
+    # 设置默认值
+    DEBUG=(bool, False)
+)
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# 读取 .env 文件
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
-ALLOWED_HOSTS = ["*"]
+# 使用环境变量
+DEBUG = env('DEBUG')
+SECRET_KEY = env('SECRET_KEY')
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 
 CUSTOM_APPS = [
     'shuati_app',
 ]
 
-LANGUAGE_CODE = 'zh-hans'
-TIME_ZONE = 'Asia/Shanghai'
-USE_TZ = True
+LANGUAGE_CODE = env('LANGUAGE_CODE', default='en-us')
+TIME_ZONE = env('TIME_ZONE', default='UTC')
+USE_TZ = env.bool('USE_TZ', default=True)
 
 # settings.py
 # 设置字符编码为UTF-8
 DEFAULT_CHARSET = 'utf-8'
 
 INSTALLED_APPS = [
-                     'django.contrib.admin',
-                     'django.contrib.auth',
-                     'django.contrib.contenttypes',
-                     'django.contrib.sessions',
-                     'django.contrib.messages',
-                     'django.contrib.staticfiles',
-
-                 ] + CUSTOM_APPS
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+] + CUSTOM_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -69,10 +75,7 @@ WSGI_APPLICATION = 'shuati.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': env.db(),
 }
 
 # Password validation
@@ -92,13 +95,6 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
-# LANGUAGE_CODE = 'zh-hans'
-# TIME_ZONE = 'Asia/Shanghai'
-#
-# USE_TZ = True
-
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
