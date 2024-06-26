@@ -1,0 +1,48 @@
+name: Django CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  test:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.11'  # 你可以根据你的需求选择不同的 Python 版本
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Lint code with flake8
+      run: |
+        pip install flake8
+        flake8 .
+
+    - name: Set up database
+      run: |
+        # 如果使用 SQLite，可以跳过这一步
+        # 如果使用 PostgreSQL/MySQL等数据库，需要进行相应设置
+        # 例如，对于 PostgreSQL：
+        # sudo service postgresql start
+        # psql -c 'CREATE DATABASE mydatabase;' -U postgres
+
+    - name: Run migrations
+      run: python manage.py migrate
+
+    - name: Run tests
+      run: python manage.py test
