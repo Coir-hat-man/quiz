@@ -27,7 +27,7 @@ class LoginView(View):
 
     def get(self, request):
         if request.session.get('info'):  # 如果已经登录，直接跳转到控制台
-            return redirect('/student_console/')
+            return redirect('/shuati_app/')
         """处理GET请求，返回注册页面"""
         return render(request, 'login.html')
 
