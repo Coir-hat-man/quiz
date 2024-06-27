@@ -10,12 +10,12 @@ python manage.py makemigrations
 python manage.py migrate
 注意，如果需要将数据库切换为MySQL，请在 settings.py文件里面注释掉sqlite的配置，添加MySQL的配置
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
+DATABASES = {
+     'default': {
+         'ENGINE': 'django.db.backends.sqlite3',
+         'NAME': BASE_DIR / 'db.sqlite3',
+     }
+}
 
 # 连接MySQL数据库
 DATABASES = {
