@@ -38,7 +38,9 @@ def ShowRank(request):
     # )
     return render(request, 'rank.html', {
         'records': records,
-        'length': length,
+        'length': length
     })
+
+
 
 
